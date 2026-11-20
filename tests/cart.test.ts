@@ -168,6 +168,26 @@ describe('cupones', () => {
     expect(res.body.couponCode).toBe('BIENVENIDA10');
   });
 
+  it('el total no queda en negativo si el cupón fijo supera el subtotal', async () => {
+    // Issue #1: cuaderno A5 (12,95 €) + REGALO25 (25 €)
+    await addToCart(ANA, 4);
+    await api()
+      .post('/api/cart/coupon')
+      .set(await authHeader(ANA))
+      .send({ code: 'REGALO25' });
+
+    const res = await api()
+      .get('/api/cart')
+      .set(await authHeader(ANA));
+
+    expect(res.body).toMatchObject({
+      couponCode: 'REGALO25',
+      subtotalCents: 1295,
+      discountCents: 1295,
+      totalCents: 0,
+    });
+  });
+
   it('responde 404 si el cupón no existe', async () => {
     const res = await api()
       .post('/api/cart/coupon')

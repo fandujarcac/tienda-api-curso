@@ -54,6 +54,25 @@ describe('POST /api/orders', () => {
     });
   });
 
+  it('no guarda un total negativo si el cupón fijo supera el subtotal', async () => {
+    // Issue #1: cuaderno A5 (12,95 €) + REGALO25 (25 €)
+    await addToCart(ANA, 4);
+    await api()
+      .post('/api/cart/coupon')
+      .set(await authHeader(ANA))
+      .send({ code: 'REGALO25' });
+
+    const res = await checkout(ANA);
+
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({
+      couponCode: 'REGALO25',
+      subtotalCents: 1295,
+      discountCents: 1295,
+      totalCents: 0,
+    });
+  });
+
   it('descuenta el stock y vacía el carrito', async () => {
     const product = createProduct({ stock: 5 });
     await addToCart(ANA, product.id, 2);
